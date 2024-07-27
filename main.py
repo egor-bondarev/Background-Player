@@ -11,7 +11,7 @@ def main():
     app = QApplication(sys.argv)
     window = PlayerApp()
     window.show()
-    app.exec_()
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
     main()
