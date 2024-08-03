@@ -12,16 +12,16 @@ from PyQt5.QtCore import (
     QFileInfo,
     QRect,
     QMetaObject,
-    #QCoreApplication,
     Qt)
 from PyQt5.QtWidgets import (
     QWidget,
     QLabel,
     QPushButton,
     QSizePolicy,
-    QSlider)
+    QSlider,
+    QGraphicsDropShadowEffect)
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QColor
 
 @dataclass
 class GeometryWidget():
@@ -82,7 +82,7 @@ class Track():
 
         row_y = GeometryGrid.ONE_ROW_Y + GeometryGrid.WIDGET_HIGHT*(self.id )
 
-        self.label_bird = Label(
+        self.label = Label(
             parent,
             GeometryWidget(
                 x = GeometryGrid.LABEL_X,
@@ -92,7 +92,7 @@ class Track():
             object_prefix,
             label_text)
 
-        self.bird_play_button = PlayerButton(
+        self.play_button = PlayerButton(
             parent,
             GeometryWidget(
                 x = GeometryGrid.PLAY_BUTTON_X,
@@ -102,7 +102,7 @@ class Track():
             object_prefix + '_play_button',
             ButtonType.PLAY)
 
-        self.bird_stop_button = PlayerButton(
+        self.stop_button = PlayerButton(
             parent,
             GeometryWidget(
                 x = GeometryGrid.STOP_BUTTON_X,
@@ -112,7 +112,7 @@ class Track():
             object_prefix + '_stop_button',
             ButtonType.STOP)
 
-        self.bird_volume_slider = VolumeSlider(
+        self.volume_slider = VolumeSlider(
             parent,
             GeometryWidget(
                 x = GeometryGrid.VOLUME_SLIDER_X,
@@ -121,11 +121,16 @@ class Track():
                 size_y = GeometryGrid.WIDGET_HIGHT),
             object_prefix + '_volume_slider')
 
-        self.bird_play_button.clicked.connect(self.play_track)
-        self.bird_stop_button.clicked.connect(self.stop_track)
+        self.play_button.clicked.connect(self.play_track)
+        self.play_button.clicked.connect(lambda: self.add_shadow(self.play_button))
+        self.play_button.clicked.connect(lambda: self.remove_shadow(self.stop_button))
 
-        self.bird_volume_slider.valueChanged.connect(
-            lambda: self.set_volume_track(self.bird_volume_slider.value()))
+        self.stop_button.clicked.connect(self.stop_track)
+        self.stop_button.clicked.connect(lambda: self.add_shadow(self.stop_button))
+        self.stop_button.clicked.connect(lambda: self.remove_shadow(self.play_button))
+
+        self.volume_slider.valueChanged.connect(
+            lambda: self.set_volume_track(self.volume_slider.value()))
 
         self.media_player.mediaStatusChanged.connect(self.play_track_again)
 
@@ -135,10 +140,12 @@ class Track():
 
         return next(cls._ids)
 
+
     def play_track(self):
         """ Press button start action. """
 
         self.media_player.play()
+
 
     def play_track_again(self, status):
         """ Restarting track. """
@@ -146,15 +153,33 @@ class Track():
         if status == 7:
             self.media_player.play()
 
+
     def stop_track(self):
         """ Press button stop action. """
 
         self.media_player.stop()
 
+
     def set_volume_track(self, value):
         """ Changing volume. """
 
         self.media_player.setVolume(value)
+
+
+    def add_shadow(self, button):
+        """ Shadow when button pressed. """
+
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setOffset(1, 1)
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor("white"))
+        button.setGraphicsEffect(shadow)
+
+
+    def remove_shadow(self, button):
+        """ Remove shadow when button unpressed. """
+
+        button.setGraphicsEffect(None)
 
 class Label(QLabel):
     """ Label for track. """
@@ -181,32 +206,30 @@ class PlayerButton(QPushButton):
 
         self.setGeometry(QRect(geometry.x, geometry.y, geometry.size_x, geometry.size_y))
 
-        button_size_policy = QSizePolicy(
-            QSizePolicy.Maximum,
-            QSizePolicy.Maximum)
-        button_size_policy.setHorizontalStretch(0)
-        button_size_policy.setVerticalStretch(0)
-        button_size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
 
-        self.setSizePolicy(button_size_policy)
+        self.setSizePolicy(size_policy)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setToolTipDuration(-1)
         self.setStyleSheet("border: none")
         self.setText("")
 
-        button_icon = QIcon()
+        icon = QIcon()
         if button_type is ButtonType.PLAY:
-            button_icon.addPixmap(
+            icon.addPixmap(
                 QPixmap(os.path.join(current_folder('assets'), 'play_black_big.png')),
                 QIcon.Normal,
                 QIcon.Off)
         else:
-            button_icon.addPixmap(
+            icon.addPixmap(
                 QPixmap(os.path.join(current_folder('assets'), 'stop_black_big.png')),
                 QIcon.Normal,
                 QIcon.Off)
 
-        self.setIcon(button_icon)
+        self.setIcon(icon)
         self.setObjectName(object_name)
 
 class VolumeSlider(QSlider):
@@ -218,9 +241,7 @@ class VolumeSlider(QSlider):
 
         self.setGeometry(QRect(geometry.x, geometry.y, geometry.size_x, geometry.size_y))
 
-        size_policy = QSizePolicy(
-            QSizePolicy.Ignored,
-            QSizePolicy.Fixed)
+        size_policy = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         size_policy.setHorizontalStretch(0)
         size_policy.setVerticalStretch(0)
         size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
@@ -243,27 +264,24 @@ class UiMainWindow(object):
 
         self.grid_widget = QWidget(self.central_widget)
 
-        grid_size_policy = QSizePolicy(
-            QSizePolicy.Maximum,
-            QSizePolicy.Maximum)
+        grid_size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         grid_size_policy.setHorizontalStretch(0)
         grid_size_policy.setVerticalStretch(0)
         grid_size_policy.setHeightForWidth(self.grid_widget.sizePolicy().hasHeightForWidth())
+
         self.grid_widget.setSizePolicy(grid_size_policy)
         self.grid_widget.setObjectName("grid_widget")
 
         for track in os.listdir('./background_sounds'):
             track_name = Path(track).stem
-            print(track_name)
             Track(self.grid_widget, track_name, track_name)
 
-        row_count = Track.get_object_count()
-        window_hight = GeometryGrid.ONE_ROW_Y*2 + GeometryGrid.WIDGET_HIGHT*row_count
+        window_hight = GeometryGrid.ONE_ROW_Y*2 + GeometryGrid.WIDGET_HIGHT*Track.get_object_count()
 
         self.grid_widget.setGeometry(QRect(0, 0, 280, window_hight))
 
         main_window.resize(280, window_hight)
         main_window.setCentralWidget(self.central_widget)
-        main_window.setWindowTitle("MainWindow")
+        main_window.setWindowTitle("Background Player")
 
         QMetaObject.connectSlotsByName(main_window)
