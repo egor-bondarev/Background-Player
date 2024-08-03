@@ -25,7 +25,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-Background-Player/
 .DS_Store
 *.mp3
 *.wav
@@ -133,6 +132,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+Background-Player/
 
 # Spyder project settings
 .spyderproject
