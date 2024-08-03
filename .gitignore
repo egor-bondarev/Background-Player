@@ -27,6 +27,8 @@ share/python-wheels/
 MANIFEST
 Background-Player/
 .DS_Store
+*.mp3
+*.wav
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

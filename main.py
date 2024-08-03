@@ -1,11 +1,11 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from desktop_ui import Ui_MainWindow
+from desktop_ui import UiMainWindow
 
-class PlayerApp(QMainWindow, Ui_MainWindow):
+class PlayerApp(QMainWindow, UiMainWindow):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+        self.setup_ui(self)
 
 def main():
     app = QApplication(sys.argv)
